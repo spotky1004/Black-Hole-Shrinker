@@ -6,6 +6,7 @@ var c = canvas.getContext("2d");
 var sessionTickSpent = 0;
 var quarks = [];
 var canvasSize = innerHeight*0.935;
+var maxCanvasPos;
 
 // canvas
 function screenUpdate() {
@@ -13,7 +14,7 @@ function screenUpdate() {
   canvas.width = innerWidth;
   canvas.height = innerHeight*0.935;
   canvasSize = Math.min(canvas.width, canvas.height);
-  var maxCanvasPos = [
+  maxCanvasPos = [
     ((innerWidth-Math.max(0, (innerWidth-canvasSize)/2))/canvasSize)*2-1,
     (((innerHeight*1-innerHeight*0.065)-Math.max(0, (innerHeight*(1-0.065)-canvasSize)/2))/canvasSize)*2-1
   ];
@@ -89,6 +90,11 @@ function load() {
   }
 }
 
+// calculate
+function signRand() {
+  return Math.sign(Math.random()*2-1);
+}
+
 // quark
 class Quark {
   constructor(attrs={}) {
@@ -100,7 +106,7 @@ class Quark {
   }
 
   update() {
-    this.speed = this.speed/100+0.003;
+    this.speed = (this.speed/100+0.003)*(!this.driction/2+1);
     var deg = (Math.atan2(this.position[1]-0, this.position[0]-0)+Math.PI*(3/2+this.driction))%(Math.PI*2);
     this.position[0] += Math.sin(deg)*this.speed;
     this.position[1] -= Math.cos(deg)*this.speed;
@@ -131,7 +137,7 @@ function getMousePos(event) {
     (((mousePos[1]-innerHeight*0.065)-Math.max(0, (innerHeight*(1-0.065)-canvasSize)/2))/canvasSize)*2-1
   ];
 }
-canvas.onclick = new Function("quarks.push(new Quark({position: [canvasPos[0], canvasPos[1]], mess: 0.008, color: '#0787f0'}));quarks.push(new Quark({position: [canvasPos[0], canvasPos[1]], mess: 0.008, driction: 1, color: '#f02a07'}));");
+canvas.onclick = new Function("var r = [Math.random()*0.4*signRand(), Math.random()*0.4*signRand()]; quarks.push(new Quark({position: [canvasPos[0]+r[0], canvasPos[1]+r[1]], mess: 0.008, color: '#0787f0'}));quarks.push(new Quark({position: [canvasPos[0]+r[0], canvasPos[1]+r[1]], mess: 0.008, driction: 1, color: '#f02a07'}));");
 
 // loop
 setInterval( function () {
