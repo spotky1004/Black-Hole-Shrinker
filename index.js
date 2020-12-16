@@ -11,7 +11,7 @@ var maxCanvasPos;
 // canvas
 function screenUpdate() {
   // set canvas size
-  canvas.width = innerWidth;
+  canvas.width = (innerWidth-innerHeight*0.005)*0.8;
   canvas.height = innerHeight*0.935;
   canvasSize = Math.min(canvas.width, canvas.height);
   maxCanvasPos = [
@@ -72,7 +72,8 @@ var tempSaveData = {
   "quark": 0,
   "bestRecord": 0,
   "tickSpent": 0,
-  "energy": 0
+  "energy": 0,
+  "quarkUpgrade" : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 };
 var game = {};
 var savePoint = "blockHoleShrinker";
