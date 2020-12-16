@@ -15,8 +15,8 @@ function screenUpdate() {
   canvas.height = innerHeight*0.935;
   canvasSize = Math.min(canvas.width, canvas.height);
   maxCanvasPos = [
-    ((innerWidth-Math.max(0, (innerWidth-canvasSize)/2))/canvasSize)*2-1,
-    (((innerHeight*1-innerHeight*0.065)-Math.max(0, (innerHeight*(1-0.065)-canvasSize)/2))/canvasSize)*2-1
+    ((canvas.width-Math.max(0, (canvas.width-canvasSize)/2))/canvasSize)*2-1,
+    (((canvas.height)-Math.max(0, (canvas.height-canvasSize)/2))/canvasSize)*2-1
   ];
 
   // clear canvas
@@ -26,7 +26,7 @@ function screenUpdate() {
   c.rect(0, 0, canvas.width, canvas.height);
   c.fill();
 
-  var blackholeSize = Math.sqrt(game.mess/1e15)/2;
+  var blackholeSize = Math.sqrt(game.mass/1e15)/2;
   // draw blackhole
   var grd = c.createRadialGradient(canvas.width/2, canvas.height/2, canvasSize*blackholeSize, canvas.width/2, canvas.height/2, canvasSize*blackholeSize*1.1);
   grd.addColorStop(0, "#000");
@@ -43,9 +43,9 @@ function screenUpdate() {
       (!quarks[i].driction && Math.abs(quarks[i].position[0]) < 0.005 && Math.abs(quarks[i].position[1]) < 0.005)
     ) {
       if (quarks[i].driction) {
-        quarkBump(1);
+        quarkBump(quarks[i].mass);
       } else {
-        blackholeBump(1);
+        blackholeBump(quarks[i].mass);
       }
       quarks.splice(i, 1);
       i--;
@@ -56,9 +56,9 @@ function screenUpdate() {
     c.strokeStyle = quarks[i].color;
     quarks[i].update();
     c.arc(
-      canvasSize*(0.5+quarks[i].position[0]/2)+Math.max(0, (innerWidth-canvasSize)/2),
-      canvasSize*(0.5+quarks[i].position[1]/2)+Math.max(0, (innerHeight*(1-0.065)-canvasSize)/2),
-      quarks[i].mess*canvasSize/2,
+      canvasSize*(0.5+quarks[i].position[0]/2)+Math.max(0, (canvas.width-canvasSize)/2),
+      canvasSize*(0.5+quarks[i].position[1]/2)+Math.max(0, (canvas.height-canvasSize)/2),
+      ((Math.log(quarks[i].mass, 10)+1)**2)*canvasSize/4500,
       0, Math.PI*2
     );
     c.fill();
@@ -68,7 +68,7 @@ function screenUpdate() {
 
 // saveload
 var tempSaveData = {
-  "mess": 1e15,
+  "mass": 1e15,
   "quark": 0,
   "bestRecord": 0,
   "tickSpent": 0,
@@ -89,6 +89,12 @@ function load() {
     }
   }
 }
+function gameReset() {
+  for (var i in tempSaveData) {
+    game[i] = tempSaveData[i];
+  }
+  save();
+}
 
 // calculate
 function signRand() {
@@ -99,14 +105,14 @@ function signRand() {
 class Quark {
   constructor(attrs={}) {
     this.position = attrs.position || [0, 0];
-    this.mess = attrs.mess || 0;
+    this.mass = attrs.mass || 0;
     this.speed = attrs.speed || 0;
     this.driction = attrs.driction || 0;
     this.color = attrs.color || '#fff';
   }
 
   update() {
-    this.speed = (this.speed/100+0.003)*(!this.driction/2+1);
+    this.speed = (this.speed/100+0.003)*(1.5);
     var deg = (Math.atan2(this.position[1]-0, this.position[0]-0)+Math.PI*(3/2+this.driction))%(Math.PI*2);
     this.position[0] += Math.sin(deg)*this.speed;
     this.position[1] -= Math.cos(deg)*this.speed;
@@ -116,14 +122,34 @@ class Quark {
 // game
 function mainDomUpdate() {
   document.getElementById("quarkCount").innerHTML = game.quark;
-  document.getElementById("quarkCount").style.transform = `scale(${Math.max(1, Number(document.getElementById("quarkCount").style.transform.replace(/[scale\(\)]|(1, )/g, ''))*0.99)})`;
+  document.getElementById("quarkCount").style.transform = `scale(1, ${Math.max(1, Number(document.getElementById("quarkCount").style.transform.replace(/[scale\(\)]|(1, )/g, ''))*0.99)})`;
 }
 function quarkBump(count) {
   game.quark += count;
-  document.getElementById("quarkCount").style.transform = `scale(1.4)`;
+  document.getElementById("quarkCount").style.transform = `scale(1, 1.5)`;
 }
 function blackholeBump(count) {
-  game.mess -= count;
+  game.mass -= count;
+}
+function spawnQuark(count=1) {
+  for (var i = 0; i < count; i++) {
+    var mass = getQuarkMass();
+    var p = [(maxCanvasPos[0]*Math.random()*0.5)*signRand(), (maxCanvasPos[1]*Math.random()*0.5)*signRand()];
+    quarks.push(new Quark({position: [p[0], p[1]], mass: mass, color: '#e1f0d8'}));
+    quarks.push(new Quark({position: [p[0], p[1]], mass: mass, driction: 1, color: '#e6aae5'}));
+  }
+}
+
+// get
+function getQuarkMassRange() {
+  var range = [1, 1];
+  return range;
+}
+function getQuarkMass() {
+  return Math.floor(Math.random()*(getQuarkMassRange()[1]-getQuarkMassRange()[0]+1))+getQuarkMassRange()[0];
+}
+function getClickMult() {
+  return 1;
 }
 
 // event
@@ -133,13 +159,14 @@ document.onmousemove = getMousePos;
 function getMousePos(event) {
   mousePos = [event.clientX, event.clientY];
   canvasPos = [
-    ((mousePos[0]-Math.max(0, (innerWidth-canvasSize)/2))/canvasSize)*2-1,
-    (((mousePos[1]-innerHeight*0.065)-Math.max(0, (innerHeight*(1-0.065)-canvasSize)/2))/canvasSize)*2-1
+    ((mousePos[0]-Math.max(0, (canvas.width-canvasSize)/2))/canvasSize)*2-1,
+    (((mousePos[1]-innerHeight*0.065)-Math.max(0, (canvas.height-canvasSize)/2))/canvasSize)*2-1
   ];
 }
-canvas.onclick = new Function("var r = [Math.random()*0.4*signRand(), Math.random()*0.4*signRand()]; quarks.push(new Quark({position: [canvasPos[0]+r[0], canvasPos[1]+r[1]], mess: 0.008, color: '#0787f0'}));quarks.push(new Quark({position: [canvasPos[0]+r[0], canvasPos[1]+r[1]], mess: 0.008, driction: 1, color: '#f02a07'}));");
+canvas.onclick = new Function("spawnQuark(getClickMult())");
 
 // loop
+var tickSpeed = 15;
 setInterval( function () {
   screenUpdate();
   sessionTickSpent++;
@@ -147,8 +174,19 @@ setInterval( function () {
   if (sessionTickSpent%100 === 0) {
     save();
   }
+  if (sessionTickSpent%Math.floor(1000/tickSpeed) == 0) {
+    spawnQuark(1);
+  }
   mainDomUpdate();
-}, 15);
+}, tickSpeed);
 
 // init2
 load();
+
+// override
+Math.log = (function() {
+  var log = Math.log;
+  return function(n, base) {
+    return log(n)/(base ? log(base) : 1);
+  };
+})();
