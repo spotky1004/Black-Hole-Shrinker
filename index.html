@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./index.css">
+    <script src="./index.js" charset="utf-8" defer></script>
+    <title>Black Hole Shrinker</title>
+  </head>
+  <body>
+    <div id="quarks" style="width: 100vw; height: 6vh; background: linear-gradient(135deg, rgba(122,122,122,1) 0%,rgba(128,128,128,0) 18%,rgba(150,150,150,0) 79%,rgba(158,158,158,1) 100%); background-color: #000; text-align: center;">
+      <div style="transform: translateY(-0.3vh); color: #aaa; font-size: 3vh;">
+        You have <span id="quarkCount" style="display: inline-block; text-shadow: 0 0 3vh #fff, 0 0 3vh #fff, 0 0 3vh #fff; font-size: 4vh; color: #fff;">0</span> Quarks
+      </div>
+    </div>
+    <div style="background: #fff; height: 0.5vh; box-shadow: 0 0 2vh #fff, 0 0 2vh #fff, 0 0 2vh #fff;"></div>
+    <div id="main" style="width: 100vw; height: 93.5vh; background: #000;">
+      <span style="display: inline-block; width: 100vw; height: 93.5vh;">
+        <canvas id="canvas"></canvas>
+      </span>
+    </div>
+  </body>
+</html>
