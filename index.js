@@ -58,7 +58,7 @@ function screenUpdate() {
     c.arc(
       canvasSize*(0.5+quarks[i].position[0]/2)+Math.max(0, (canvas.width-canvasSize)/2),
       canvasSize*(0.5+quarks[i].position[1]/2)+Math.max(0, (canvas.height-canvasSize)/2),
-      ((Math.log(quarks[i].mass, 10)+1)**2)*canvasSize/4500,
+      ((Math.log(quarks[i].mass, 10)+1)**2)*canvasSize/2000,
       0, Math.PI*2
     );
     c.fill();
