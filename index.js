@@ -229,6 +229,9 @@ function quarkBump(count) {
   game.quark += count*getUpgradeEffect(7);
   game.totalQuark += count*getUpgradeEffect(7);
   document.getElementById("quarkCount").style.transform = `scale(1, 1.5)`;
+  if (game.quark > 1e15) {
+    game.quark = 1e15;
+  }
 }
 function blackholeBump(count) {
   game.mass -= count*getUpgradeEffect(7);
