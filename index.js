@@ -103,6 +103,9 @@ function screenUpdate() {
     var txtToWrite = `You beat the game! Thanks for playing!`;
     c.fillText(txtToWrite, canvas.width/2-c.measureText((txtToWrite).toString()).width/2, canvas.height/2);
   }
+  
+  // finally draw to the onscreen canvas
+  onscreenC.drawImage(offscreenCanvas, 0, 0);
 }
 
 // saveload
