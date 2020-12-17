@@ -214,6 +214,10 @@ function quarkBump(count) {
 function blackholeBump(count) {
   game.mass -= count*getUpgradeEffect(7);
   game.totalMass += count*getUpgradeEffect(7);
+  if (game.mass < 1) {
+    game.mass = 1;
+    document.getElementById("quarkCount").style.color = '#cfc811';
+  }
 }
 function spawnQuark(count=1) {
   if (Math.random() < getUpgradeEffect(5)) {
