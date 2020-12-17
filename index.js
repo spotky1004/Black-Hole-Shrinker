@@ -290,7 +290,7 @@ function getUpgradeEffect(idx, lv=game.quarkUpgrade[idx]) {
     return lv;
       break;
     case 1:
-    return lv**2;
+    return lv**2+Math.max(0, lv-10)**3;
       break;
     case 2:
     return 1+lv**1.5/10+lv/2;
