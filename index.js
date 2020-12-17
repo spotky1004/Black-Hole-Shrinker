@@ -159,6 +159,7 @@ var upgradeDesc = [
 function mainDomUpdate() {
   document.getElementById("quarkCount").innerHTML = notation(Math.floor(game.quark));
   document.getElementById("quarkCount").style.transform = `scale(1, ${Math.max(1, Number(document.getElementById("quarkCount").style.transform.replace(/[scale\(\)]|(1, )/g, ''))*0.99)})`;
+  document.getElementById("blackholeMass").innerHTML = 'Mass: ' + notation(Math.floor(game.mass));
 }
 function upgradeSpawn() {
   var unlocked = upgradeCut.length;
@@ -339,7 +340,7 @@ function getUpgradeEffect(idx, lv=game.quarkUpgrade[idx]) {
     return [1+lv, 1+lv*3];
       break;
     case 7:
-    return Math.pow(getUpgradeEffect(4)*speedMult, lv*1/5);
+    return Math.pow(getUpgradeEffect(4)*speedMult, lv*1/4);
       break;
     default:
       return 0;
