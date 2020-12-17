@@ -418,7 +418,9 @@ var tickSpeed = 20;
 var autoClickCharge = 0;
 setInterval( function () {
   screenUpdate();
-  displayUpgrade();
+  if (sessionTickSpent % 5 === 0) {
+    displayUpgrade();
+  }
   sessionTickSpent++;
   game.tickSpent++;
   if (sessionTickSpent%100 === 0) {
