@@ -66,3 +66,11 @@
 .upgradeCost:hover {
   background-color: rgba(255, 255, 255, 0.15);
 }
+
+#settings {
+  background-color: rgba(255, 255, 255, 0.2);
+  width: 60vw;
+  height: 30vh;
+  position: absolute;
+  
+}

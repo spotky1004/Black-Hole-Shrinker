@@ -52,7 +52,7 @@ function screenUpdate() {
       continue;
     }
     quarks[i].update();
-    if (i < 3000) {
+    if (i < 3000 && !game.toggleQuark) {
       c.beginPath();
       c.fillStyle = quarks[i].color;
       c.strokeStyle = quarks[i].color;
@@ -95,7 +95,8 @@ var tempSaveData = {
   "bestRecord": 0,
   "tickSpent": 0,
   "energy": 0,
-  "quarkUpgrade" : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  "quarkUpgrade" : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  "toggleQuark": 0
 };
 var game = {};
 var savePoint = "blockHoleShrinker";
@@ -160,6 +161,11 @@ function mainDomUpdate() {
   document.getElementById("quarkCount").innerHTML = notation(Math.floor(game.quark));
   document.getElementById("quarkCount").style.transform = `scale(1, ${Math.max(1, Number(document.getElementById("quarkCount").style.transform.replace(/[scale\(\)]|(1, )/g, ''))*0.99)})`;
   document.getElementById("blackholeMass").innerHTML = 'Mass: ' + notation(Math.floor(game.mass));
+  if (game.toggleQuark) {
+    document.getElementById("toggleQuark").style.color = '#b31d92';
+  } else {
+    document.getElementById("toggleQuark").style.color = '#2eb31d';
+  }
 }
 function upgradeSpawn() {
   var unlocked = upgradeCut.length;
