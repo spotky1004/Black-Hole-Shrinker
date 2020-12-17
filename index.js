@@ -2,23 +2,42 @@
 
 // init1
 var canvas = document.querySelector("#canvas");
-var c = canvas.getContext("2d");
+var onscreenC = canvas.getContext("2d", {alpha: false});
 var sessionTickSpent = 0;
 var quarks = [];
 var canvasSize = innerHeight*0.935;
 var maxCanvasPos;
 
-// canvas
-function screenUpdate() {
-  // set canvas size
+// set canvas size
+canvas.width = (innerWidth-innerHeight*0.005)*0.8;
+canvas.height = innerHeight*0.935;
+canvasSize = Math.min(canvas.width, canvas.height);
+maxCanvasPos = [
+  ((canvas.width-Math.max(0, (canvas.width-canvasSize)/2))/canvasSize)*2-1,
+  (((canvas.height)-Math.max(0, (canvas.height-canvasSize)/2))/canvasSize)*2-1
+];
+
+// init offscreen canvas
+var offscreenCanvas = document.createElement("canvas");
+offscreenCanvas.width = canvas.width;
+offscreenCanvas.height = canvas.height;
+var c = offscreenCanvas.getContext("2d", {alpha: false});
+
+// reset canvas size upon window resize
+// TODO: scale canvas with CSS instead for better performance
+window.onresize = function resizeCanvas () {
   canvas.width = (innerWidth-innerHeight*0.005)*0.8;
   canvas.height = innerHeight*0.935;
+  offscreenCanvas.width = canvas.width;
+  offscreenCanvas.height = canvas.height;
   canvasSize = Math.min(canvas.width, canvas.height);
   maxCanvasPos = [
     ((canvas.width-Math.max(0, (canvas.width-canvasSize)/2))/canvasSize)*2-1,
     (((canvas.height)-Math.max(0, (canvas.height-canvasSize)/2))/canvasSize)*2-1
   ];
+}
 
+function screenUpdate() {
   // clear canvas
   c.clearRect(0, 0, canvas.width, canvas.height);
   c.beginPath();
@@ -84,6 +103,9 @@ function screenUpdate() {
     var txtToWrite = `You beat the game! Thanks for playing!`;
     c.fillText(txtToWrite, canvas.width/2-c.measureText((txtToWrite).toString()).width/2, canvas.height/2);
   }
+  
+  // finally draw to the onscreen canvas
+  onscreenC.drawImage(offscreenCanvas, 0, 0);
 }
 
 // saveload
@@ -396,7 +418,9 @@ var tickSpeed = 20;
 var autoClickCharge = 0;
 setInterval( function () {
   screenUpdate();
-  displayUpgrade();
+  if (sessionTickSpent % 5 === 0) {
+    displayUpgrade();
+  }
   sessionTickSpent++;
   game.tickSpent++;
   if (sessionTickSpent%100 === 0) {
