@@ -2,7 +2,7 @@
 
 // init1
 var canvas = document.querySelector("#canvas");
-var c = canvas.getContext("2d", {alpha: false});
+var onscreenC = canvas.getContext("2d", {alpha: false});
 var sessionTickSpent = 0;
 var quarks = [];
 var canvasSize = innerHeight*0.935;
@@ -17,11 +17,19 @@ maxCanvasPos = [
   (((canvas.height)-Math.max(0, (canvas.height-canvasSize)/2))/canvasSize)*2-1
 ];
 
+// init offscreen canvas
+var offscreenCanvas = document.createElement("canvas");
+offscreenCanvas.width = canvas.width;
+offscreenCanvas.height = canvas.height;
+var c = offscreenCanvas.getContext("2d", {alpha: false});
+
 // reset canvas size upon window resize
 // TODO: scale canvas with CSS instead for better performance
 window.onresize = function resizeCanvas () {
   canvas.width = (innerWidth-innerHeight*0.005)*0.8;
   canvas.height = innerHeight*0.935;
+  offscreenCanvas.width = canvas.width;
+  offscreenCanvas.height = canvas.height;
   canvasSize = Math.min(canvas.width, canvas.height);
   maxCanvasPos = [
     ((canvas.width-Math.max(0, (canvas.width-canvasSize)/2))/canvasSize)*2-1,
