@@ -253,8 +253,8 @@ function spawnQuark(count=1) {
   mult *= getUpgradeEffect(6)[1]*((count/getUpgradeEffect(6)[0])/countC);
   for (var i = 0; i < countC; i++) {
     var mass = getQuarkMass();
-    var dist = Math.random();
-    var deg = Math.PI*2*Math.random()
+    var dist = Math.sqrt(game.mass/1e15);
+    var deg = Math.PI*2*Math.random();
     var p = [
       Math.sin(deg)*dist,
       -Math.cos(deg)*dist
