@@ -4,3 +4,65 @@
   font-family: 'Space Mono', monospace;
   user-select: none;
 }
+.upgrade {
+  width: 100%;
+  height: calc(100% / 8);
+  color: white;
+  transition: background-color 0.15s;
+  cursor: pointer;
+}
+.upgrade:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+.upgrade:active {
+  background-color: rgba(255, 255, 255, 0.3);
+  transition: background-color 0s;
+}
+.upgradeName {
+  width: 100%;
+  height: 30%;
+  font-size: min(2.2vh, 1.1vw);
+  transition: background-color 0.15s;
+}
+.upgradeName:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+.upgradeEffect {
+  display: flex;
+  width: 100%;
+  height: 25%;
+  font-size: min(1.6vh, 0.8vw);
+  transition: background-color 0.15s;
+}
+.upgradeEffect > span {
+  width: 50%;
+  height: 100%;
+  text-align: center;
+}
+.upgradeEffectNext {
+  color: #888;
+}
+.upgradeEffect > span:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+.upgradeDesc {
+  width: 100%;
+  height: 25%;
+  font-size: min(1.5vh, 0.75vw);
+  transition: background-color 0.15s;
+}
+.upgradeDesc:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+.upgradeCost {
+  width: 100%;
+  height: 20%;
+  text-align: center;
+  color: #888;
+  font-size: min(1.5vh, 0.75vw);
+  border-bottom: calc(93.5vh * 0.1 * 0.05) solid #fff;
+  transition: background-color 0.15s;
+}
+.upgradeCost:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
