@@ -149,7 +149,7 @@ class Quark {
 // game
 var upgradeCut = [10, 100, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9];
 var upgradeName = [
-  "More Quarks", "Heavier Quarks", "Fast Clicker", "More Heavier Quarks", "Fasrer Quarks",
+  "More Quarks", "Heavier Quarks", "Fast Clicker", "More Heavier Quarks", "Fatrer Quarks",
   "Critical Chance", "Compress Quarks", "Speed Mass"
 ];
 var upgradeDesc = [
