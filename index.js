@@ -2,7 +2,7 @@
 
 // init1
 var canvas = document.querySelector("#canvas");
-var c = canvas.getContext("2d");
+var c = canvas.getContext("2d", {alpha: false});
 var sessionTickSpent = 0;
 var quarks = [];
 var canvasSize = innerHeight*0.935;
