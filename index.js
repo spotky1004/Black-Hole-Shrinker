@@ -129,17 +129,17 @@ class Quark {
 }
 
 // game
-var upgradeCut = [10, 100, 1e4, 1e5, 1e6, 1e7, 1e8, 1e10];
+var upgradeCut = [10, 100, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9];
 var upgradeName = [
   "More Quarks", "Heavier Quarks", "Fast Clicker", "More Heavier Quarks", "Fasrer Quarks",
-  "Critical Chance", "Compress Quarks", "What"
+  "Critical Chance", "Compress Quarks", "Speed Mass"
 ];
 var upgradeDesc = [
   "Spawn more Quarks per clcik", "Spawn heavier Quarks", "Autoclick Faster", "Spawn more heavier Quarks", "Faster move speed of Quarks",
-  "Increase mass! Increase speed!", "Compress some Quarks, but gain mass", ":v"
+  "Increase mass! Increase speed!", "Compress some Quarks, but gain mass", "Speed multiply affect mass"
 ];
 function mainDomUpdate() {
-  document.getElementById("quarkCount").innerHTML = notation(game.quark);
+  document.getElementById("quarkCount").innerHTML = notation(Math.floor(game.quark));
   document.getElementById("quarkCount").style.transform = `scale(1, ${Math.max(1, Number(document.getElementById("quarkCount").style.transform.replace(/[scale\(\)]|(1, )/g, ''))*0.99)})`;
 }
 function upgradeSpawn() {
@@ -207,22 +207,25 @@ function displayUpgrade() {
   }
 }
 function quarkBump(count) {
-  game.quark += count;
-  game.totalQuark += count;
+  game.quark += count*getUpgradeEffect(7);
+  game.totalQuark += count*getUpgradeEffect(7);
   document.getElementById("quarkCount").style.transform = `scale(1, 1.5)`;
 }
 function blackholeBump(count) {
-  game.mass -= count;
-  game.totalMass += count;
+  game.mass -= count*getUpgradeEffect(7);
+  game.totalMass += count*getUpgradeEffect(7);
 }
 function spawnQuark(count=1) {
   if (Math.random() < getUpgradeEffect(5)) {
     var crit = 1;
-    speedMult = 100;
+    speedMult = Math.min(1e3, speedMult*100);
   } else {
     var crit = 0;
   }
-  for (var i = 0; i < count; i++) {
+  var mult = 1;
+  var countC = Math.max(1, Math.ceil(count/getUpgradeEffect(6)[0]));
+  mult *= getUpgradeEffect(6)[1]*((count/getUpgradeEffect(6)[0])/countC);
+  for (var i = 0; i < countC; i++) {
     var mass = getQuarkMass();
     var dist = Math.random();
     var deg = Math.PI*2*Math.random()
@@ -234,9 +237,9 @@ function spawnQuark(count=1) {
       quarks.push(new Quark({position: [p[0], p[1]], mass: mass, color: '#e1f0d8'}));
       quarks.push(new Quark({position: [p[0], p[1]], mass: mass, driction: 1, color: '#e6aae5'}));
     } else {
-      var mult = 2**(Math.random()*6);
-      quarks.push(new Quark({position: [p[0], p[1]], mass: mass, color: '#77ed2f'}));
-      quarks.push(new Quark({position: [p[0], p[1]], mass: mass, driction: 1, color: '#e827e5'}));
+      mult *= 2;
+      quarks.push(new Quark({position: [p[0], p[1]], mass: mass*mult, color: '#77ed2f'}));
+      quarks.push(new Quark({position: [p[0], p[1]], mass: mass*mult, driction: 1, color: '#e827e5'}));
     }
   }
 }
@@ -280,6 +283,12 @@ function getUpgradeCost(idx, lv=game.quarkUpgrade[idx]) {
     case 5:
     return Math.floor(3e6*(3-lv/50)**lv);
       break;
+    case 6:
+    return Math.floor(50e6*(3+lv/4)**lv);
+      break;
+    case 7:
+    return Math.floor(3e8*lvp**(4+lv));
+      break;
     default:
       return 9.99e99;
   }
@@ -304,6 +313,12 @@ function getUpgradeEffect(idx, lv=game.quarkUpgrade[idx]) {
     case 5:
     return 0.02*lv;
       break;
+    case 6:
+    return [1+lv, 1+lv*3];
+      break;
+    case 7:
+    return Math.pow(getUpgradeEffect(4)*speedMult, lv*1/5);
+      break;
     default:
       return 0;
   }
@@ -317,11 +332,14 @@ function getUpgradeEffectString(idx, lv=game.quarkUpgrade[idx]) {
     case 2:
     return `${Number(s).toFixed(2)} / sec`;
       break;
-    case 3: case 4:
-    return `x${Number(s).toFixed(2)}`;
+    case 3: case 4: case 7:
+    return `x${notation(Number(s).toFixed(2))}`;
       break;
     case 5:
     return `${(Number(s)*100).toFixed(0)}%`;
+      break;
+    case 6:
+    return `/${getUpgradeEffect(idx, lv)[0].toString()}, x${getUpgradeEffect(idx, lv)[1].toString()}`;
       break;
     default:
     return 'Error!';
