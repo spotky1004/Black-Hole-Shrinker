@@ -121,7 +121,7 @@ class Quark {
   }
 
   update() {
-    this.speed += (0.00003)*(1.5)/Math.log(this.mass+1, 3)**2*getUpgradeEffect(4);
+    this.speed += (0.000003)*(1.5)/Math.log(this.mass+1, 3)**2*getUpgradeEffect(4);
     var deg = (Math.atan2(this.position[1]-0, this.position[0]-0)+Math.PI*(3/2+this.driction))%(Math.PI*2);
     this.position[0] += Math.sin(deg)*this.speed*speedMult;
     this.position[1] -= Math.cos(deg)*this.speed*speedMult;
