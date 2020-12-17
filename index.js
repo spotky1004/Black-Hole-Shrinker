@@ -153,7 +153,7 @@ var upgradeName = [
   "Critical Chance", "Compress Quarks", "Speed Mass"
 ];
 var upgradeDesc = [
-  "Spawn more Quarks per clcik", "Spawn heavier Quarks", "Autoclick Faster", "Spawn more heavier Quarks", "Faster move speed of Quarks",
+  "Spawn more Quarks per click", "Spawn heavier Quarks", "Autoclick Faster", "Spawn more heavier Quarks", "Faster move speed of Quarks",
   "Increase mass! Increase speed!", "Compress some Quarks, but gain mass", "Speed multiply affect mass"
 ];
 function mainDomUpdate() {
