@@ -260,8 +260,8 @@ function spawnQuark(count=1) {
       -Math.cos(deg)*dist
     ];
     if (!crit) {
-      quarks.push(new Quark({position: [p[0], p[1]], mass: mass, color: '#e1f0d8'}));
-      quarks.push(new Quark({position: [p[0], p[1]], mass: mass, driction: 1, color: '#e6aae5'}));
+      quarks.push(new Quark({position: [p[0], p[1]], mass: mass*mult, color: '#e1f0d8'}));
+      quarks.push(new Quark({position: [p[0], p[1]], mass: mass*mult, driction: 1, color: '#e6aae5'}));
     } else {
       mult *= 2;
       quarks.push(new Quark({position: [p[0], p[1]], mass: mass*mult, color: '#77ed2f'}));
