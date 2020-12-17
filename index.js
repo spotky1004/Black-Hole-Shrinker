@@ -8,9 +8,18 @@ var quarks = [];
 var canvasSize = innerHeight*0.935;
 var maxCanvasPos;
 
-// canvas
-function screenUpdate() {
-  // set canvas size
+// set canvas size
+canvas.width = (innerWidth-innerHeight*0.005)*0.8;
+canvas.height = innerHeight*0.935;
+canvasSize = Math.min(canvas.width, canvas.height);
+maxCanvasPos = [
+  ((canvas.width-Math.max(0, (canvas.width-canvasSize)/2))/canvasSize)*2-1,
+  (((canvas.height)-Math.max(0, (canvas.height-canvasSize)/2))/canvasSize)*2-1
+];
+
+// reset canvas size upon window resize
+// TODO: scale canvas with CSS instead for better performance
+window.onresize = function resizeCanvas () {
   canvas.width = (innerWidth-innerHeight*0.005)*0.8;
   canvas.height = innerHeight*0.935;
   canvasSize = Math.min(canvas.width, canvas.height);
@@ -18,7 +27,9 @@ function screenUpdate() {
     ((canvas.width-Math.max(0, (canvas.width-canvasSize)/2))/canvasSize)*2-1,
     (((canvas.height)-Math.max(0, (canvas.height-canvasSize)/2))/canvasSize)*2-1
   ];
+}
 
+function screenUpdate() {
   // clear canvas
   c.clearRect(0, 0, canvas.width, canvas.height);
   c.beginPath();
