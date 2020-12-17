@@ -110,6 +110,7 @@ function notation(num) {
 }
 
 // quark
+var speedMult = 1;
 class Quark {
   constructor(attrs={}) {
     this.position = attrs.position || [0, 0];
@@ -120,10 +121,10 @@ class Quark {
   }
 
   update() {
-    this.speed = (this.speed/100+0.003)*(1.5)/Math.log(this.mass+1, 3)**2*getUpgradeEffect(4);
+    this.speed = (0.003)*(1.5)/Math.log(this.mass+1, 3)**2*getUpgradeEffect(4);
     var deg = (Math.atan2(this.position[1]-0, this.position[0]-0)+Math.PI*(3/2+this.driction))%(Math.PI*2);
-    this.position[0] += Math.sin(deg)*this.speed;
-    this.position[1] -= Math.cos(deg)*this.speed;
+    this.position[0] += Math.sin(deg)*this.speed*speedMult;
+    this.position[1] -= Math.cos(deg)*this.speed*speedMult;
   }
 }
 
@@ -215,6 +216,12 @@ function blackholeBump(count) {
   game.totalMass += count;
 }
 function spawnQuark(count=1) {
+  if (Math.random() < getUpgradeEffect(5)) {
+    var crit = 1;
+    speedMult = 100;
+  } else {
+    var crit = 0;
+  }
   for (var i = 0; i < count; i++) {
     var mass = getQuarkMass();
     var dist = Math.random();
@@ -223,8 +230,14 @@ function spawnQuark(count=1) {
       Math.sin(deg)*dist,
       -Math.cos(deg)*dist
     ];
-    quarks.push(new Quark({position: [p[0], p[1]], mass: mass, color: '#e1f0d8'}));
-    quarks.push(new Quark({position: [p[0], p[1]], mass: mass, driction: 1, color: '#e6aae5'}));
+    if (!crit) {
+      quarks.push(new Quark({position: [p[0], p[1]], mass: mass, color: '#e1f0d8'}));
+      quarks.push(new Quark({position: [p[0], p[1]], mass: mass, driction: 1, color: '#e6aae5'}));
+    } else {
+      var mult = 2**(Math.random()*6);
+      quarks.push(new Quark({position: [p[0], p[1]], mass: mass, color: '#77ed2f'}));
+      quarks.push(new Quark({position: [p[0], p[1]], mass: mass, driction: 1, color: '#e827e5'}));
+    }
   }
 }
 function buyUpgrade(idx) {
@@ -264,6 +277,9 @@ function getUpgradeCost(idx, lv=game.quarkUpgrade[idx]) {
     case 4:
     return Math.floor(4e5*(1+lv/13)**(lv/1.6));
       break;
+    case 5:
+    return Math.floor(3e6*(3-lv/50)**lv);
+      break;
     default:
       return 9.99e99;
   }
@@ -285,6 +301,9 @@ function getUpgradeEffect(idx, lv=game.quarkUpgrade[idx]) {
     case 4:
     return 1+lv/(10*0.9**lv);
       break;
+    case 5:
+    return 0.02*lv;
+      break;
     default:
       return 0;
   }
@@ -300,6 +319,9 @@ function getUpgradeEffectString(idx, lv=game.quarkUpgrade[idx]) {
       break;
     case 3: case 4:
     return `x${Number(s).toFixed(2)}`;
+      break;
+    case 5:
+    return `${(Number(s)*100).toFixed(0)}%`;
       break;
     default:
     return 'Error!';
@@ -336,6 +358,7 @@ setInterval( function () {
     autoClickCharge -= Math.floor(autoClickCharge);
   }
   mainDomUpdate();
+  speedMult = Math.max(1, speedMult/1.5)
 }, tickSpeed);
 
 // init2
