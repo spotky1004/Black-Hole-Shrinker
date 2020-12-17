@@ -129,14 +129,14 @@ class Quark {
 }
 
 // game
-var upgradeCut = [10, 100, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9];
+var upgradeCut = [10, 100, 1e4, 1e5, 1e6, 1e7, 1e8, 1e10];
 var upgradeName = [
   "More Quarks", "Heavier Quark", "Fast Clicler", "More Heavier Quarks", "Fasrer Quarks",
-  "Critical Chance", "Compress Quarks"
+  "Critical Chance", "Compress Quarks", "What"
 ];
 var upgradeDesc = [
   "Spawn more Quarks per clcik", "Spawn heavier Quarks", "Autoclick Faster", "Spawn more heavier Quarks", "Faster move speed of Quarks",
-  "Increase mass! Increase speed!", "Compress some Quarks, but gain mass"
+  "Increase mass! Increase speed!", "Compress some Quarks, but gain mass", ":v"
 ];
 function mainDomUpdate() {
   document.getElementById("quarkCount").innerHTML = notation(game.quark);
