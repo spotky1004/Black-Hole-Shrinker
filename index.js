@@ -1,126 +1,28 @@
 "use strict";
 
-// init1
-var canvas = document.querySelector("#canvas");
-var onscreenC = canvas.getContext("2d", {alpha: false});
-var sessionTickSpent = 0;
-var quarks = [];
-var canvasSize = innerHeight*0.935;
-var maxCanvasPos;
 
-// set canvas size
-canvas.width = (innerWidth-innerHeight*0.005)*0.8;
-canvas.height = innerHeight*0.935;
-canvasSize = Math.min(canvas.width, canvas.height);
-maxCanvasPos = [
-  ((canvas.width-Math.max(0, (canvas.width-canvasSize)/2))/canvasSize)*2-1,
-  (((canvas.height)-Math.max(0, (canvas.height-canvasSize)/2))/canvasSize)*2-1
-];
+let sessionTickSpent = 0;
 
-// init offscreen canvas
-var offscreenCanvas = document.createElement("canvas");
-offscreenCanvas.width = canvas.width;
-offscreenCanvas.height = canvas.height;
-var c = offscreenCanvas.getContext("2d", {alpha: false});
-
-// reset canvas size upon window resize
-// TODO: scale canvas with CSS instead for better performance
-window.onresize = function resizeCanvas () {
-  canvas.width = (innerWidth-innerHeight*0.005)*0.8;
-  canvas.height = innerHeight*0.935;
-  offscreenCanvas.width = canvas.width;
-  offscreenCanvas.height = canvas.height;
-  canvasSize = Math.min(canvas.width, canvas.height);
-  maxCanvasPos = [
-    ((canvas.width-Math.max(0, (canvas.width-canvasSize)/2))/canvasSize)*2-1,
-    (((canvas.height)-Math.max(0, (canvas.height-canvasSize)/2))/canvasSize)*2-1
-  ];
-}
-
-function screenUpdate() {
-  // clear canvas
-  c.clearRect(0, 0, canvas.width, canvas.height);
-  c.beginPath();
-  c.fillStyle = "#222";
-  c.rect(0, 0, canvas.width, canvas.height);
-  c.fill();
-
-  var blackholeSize = Math.sqrt(game.mass/1e15)/2;
-  // draw blackhole
-  var grd = c.createRadialGradient(canvas.width/2, canvas.height/2, canvasSize*blackholeSize, canvas.width/2, canvas.height/2, canvasSize*blackholeSize*1.1);
-  grd.addColorStop(0, "#000");
-  grd.addColorStop(0.5, "#000");
-  grd.addColorStop(0.5, "#fff");
-  grd.addColorStop(1, "rgba(255, 255, 255, 0)");
-  c.fillStyle = grd;
-  c.fillRect(0, 0, canvas.width, canvas.height);
-
-  // draw quarks
-  for (var i = 0; i < quarks.length; i++) {
-    if (
-      (quarks[i].driction && (Math.abs(quarks[i].position[0]) > maxCanvasPos[0] || Math.abs(quarks[i].position[1]) > maxCanvasPos[1])) ||
-      (!quarks[i].driction && Math.abs(quarks[i].position[0]) < 0.02 && Math.abs(quarks[i].position[1]) < 0.02)
-    ) {
-      if (quarks[i].driction) {
-        quarkBump(quarks[i].mass);
-      } else {
-        blackholeBump(quarks[i].mass);
-      }
-      quarks.splice(i, 1);
-      i--;
-      continue;
-    }
-    quarks[i].update();
-    if (i < 3000 && !game.toggleQuark) {
-      c.beginPath();
-      c.fillStyle = quarks[i].color;
-      c.strokeStyle = quarks[i].color;
-      c.arc(
-        canvasSize*(0.5+quarks[i].position[0]/2)+Math.max(0, (canvas.width-canvasSize)/2),
-        canvasSize*(0.5+quarks[i].position[1]/2)+Math.max(0, (canvas.height-canvasSize)/2),
-        ((Math.log(quarks[i].mass, 10)+1)**2)*canvasSize/2000,
-        0, Math.PI*2
-      );
-      c.fill();
-      c.stroke();
-    }
-  }
-
-  // text
-  if (game.totalQuark < 10) {
-    c.beginPath();
-    c.font = `bold ${0.5*Math.sin(sessionTickSpent/100)+5}vh Space Mono`;
-    c.textBaseline = 'middle';
-    c.fillStyle = '#fff';
-    var txtToWrite = `Click here to Make Quarks`;
-    c.fillText(txtToWrite, canvas.width/2-c.measureText((txtToWrite).toString()).width/2, canvas.height/2);
-  }
-  if (game.mass <= 1) {
-    c.beginPath();
-    c.font = `bold ${0.5*Math.sin(sessionTickSpent/100)+5}vh Space Mono`;
-    c.textBaseline = 'middle';
-    c.fillStyle = '#cfc811';
-    var txtToWrite = `You beat the game! Thanks for playing!`;
-    c.fillText(txtToWrite, canvas.width/2-c.measureText((txtToWrite).toString()).width/2, canvas.height/2);
-  }
-  
-  // finally draw to the onscreen canvas
-  onscreenC.drawImage(offscreenCanvas, 0, 0);
-}
 
 // saveload
-var tempSaveData = {
+const newGame = {
   "mass": 1e15,
+  get blackholeRadius() {
+    return Math.sqrt(this.mass/1e15)/2;
+  },
   "totalMass": 0,
   "quark": 0,
   "totalQuark": 0,
   "bestRecord": 0,
   "tickSpent": 0,
   "energy": 0,
-  "quarkUpgrade" : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  // TODO: to be more extensible,
+  // it would be easier to key quarkUpgrade
+  // by name rather than idx
+  "quarkUpgrade" : [0, 0, 0, 0, 0, 0, 0, 0],
   "toggleQuark": 0
 };
-var game = {};
+var game = {...newGame};
 var savePoint = "blockHoleShrinker";
 function save() {
   localStorage[savePoint] = JSON.stringify(game);
@@ -128,19 +30,463 @@ function save() {
 function load() {
   if (typeof localStorage[savePoint] != "undefined") {
     game = JSON.parse(localStorage[savePoint]);
+    game.quarkUpgrade.forEach((lvl, i) => {
+      upgrades[i].lvl = lvl;
+    });
   }
-  for (var i in tempSaveData) {
+  for (const i in newGame) {
     if (typeof game[i] == "undefined") {
-      game[i] = tempSaveData[i];
+      gameReset();
     }
   }
 }
 function gameReset() {
-  for (var i in tempSaveData) {
-    game[i] = tempSaveData[i];
-  }
+  game = {...newGame};
   save();
 }
+
+let speedMult = 1;
+
+const upgrades = [
+  {
+    name: "More Quarks",
+    description: "Spawn more Quarks per click",
+    baseCost: 10,
+    lvl: 0,
+    get upgradeCost() {
+      const lvp = this.lvl + 1;
+      return Math.floor(10 * lvp * (lvp ** lvp));
+    },
+    get effect() {
+      return this.lvl;
+    },
+    get effectDisplayString () {
+      return "+" + notation(this.effect)
+    },
+  },
+  {
+    name: "Heavier Quarks",
+    description: "Spawn heavier Quarks",
+    baseCost: 100,
+    lvl: 0,
+    get upgradeCost() {
+      const lv = this.lvl;
+      return Math.floor(100*(2+lv/11)**(lv/1.6));
+    },
+    get effect() {
+      const lv = this.lvl;
+      return lv**2+Math.max(0, lv-10)**3;
+    },    
+    get effectDisplayString () {
+      return "+" + notation(this.effect)
+    },
+  },
+  {
+    name: "Fast Clicker",
+    description: "Autoclick Faster",
+    baseCost: 1e4,
+    lvl: 0,
+    get upgradeCost() {
+      const lv = this.lvl;
+      return Math.floor(1e4*(2+lv/8)**(lv*0.9));
+    },
+    get effect() {
+      const lv = this.lvl;
+      return 1+lv**1.5/10+lv/2;
+    },
+    get effectDisplayString () {
+      return this.effect.toFixed(2) + " / sec"
+    },
+  },
+  {
+    name: "More Heavier Quarks",
+    description: "Spawn more heavier quarks",
+    baseCost: 1e5,
+    lvl: 0,
+    get upgradeCost() {
+      const lv = this.lvl;
+      return Math.floor(1e5*(1.7+lv/10)**(lv/1.2));
+    },
+    get effect() {
+      const lv = this.lvl;
+      return 1+lv*(1+lv/(10*0.93**lv));
+    },
+    get effectDisplayString () {
+      return "x" + notation(this.effect.toFixed(2))
+    },
+  },
+  {
+    name: "Faster Quarks",
+    description: "Faster move speed of Quarks",
+    baseCost: 1e6,
+    lvl: 0,
+    get upgradeCost() {
+      const lv = this.lvl;
+      return Math.floor(4e5*(1+lv/13)**(lv/1.6));
+    },
+    get effect() {
+      const lv = this.lvl;
+      return 1+lv/(10*0.9**lv);
+    },
+    get effectDisplayString () {
+      return "x" + notation(this.effect.toFixed(2))
+    },
+  },
+  {
+    name: "Critical Chance",
+    description: "Increase mass! Increase speed!",
+    baseCost: 1e7,
+    lvl: 0,
+    get upgradeCost() {
+      const lv = this.lvl;
+      return Math.floor(3e6*(3-lv/50)**lv);
+    },
+    get effect() {
+      return 0.02 * this.lvl;
+    },
+    get effectDisplayString () {
+      return (this.effect * 100).toFixed(0) + "%"
+    },
+  },
+  {
+    name: "Compress Quarks",
+    description: "Compress some Quarks, but gain mass",
+    baseCost: 1e8,
+    lvl: 0,
+    get upgradeCost() {
+      const lv = this.lvl;
+      // is 50e6 a typo in the original version?
+      return Math.floor(50e6*(3+lv/4)**lv);
+    },
+    get effect() {
+      const lv = this.lvl;
+      return [1+lv, 1+lv*3];
+    },
+    get effectDisplayString () {
+      return `/${this.effect[0]}, x${this.effect[1]}`
+    },
+  },
+  {
+    name: "Speed Mass",
+    description: "Speed multiply affect mass",
+    baseCost: 1e9,
+    lvl: 0,
+    get upgradeCost() {
+      const lv = this.lvl;
+      const lvp = lv + 1;
+      return Math.floor(3e8*lvp**(4+lv));
+    },
+    get effect() {
+      const lv = this.lvl;
+      return Math.pow(speedMult * (1+lv/(10*0.9**lv)), lv/4);
+    },
+    get effectDisplayString () {
+      return "x" + notation(this.effect.toFixed(2))
+    }
+  },
+];
+
+// querying/manipulating the DOM is expensive...
+// rebuilding things and looking everything up 
+// will murder the CPU if you do it every tick!
+// so build those nodes once and hide them til you need them
+// and save references to them so you don't have to look them back up.
+const upgradeArea = document.getElementById("upgradeArea");
+upgrades.forEach((upgrade, i) => {
+  const upgradeDiv = document.createElement("div");
+  upgradeDiv.classList.add("upgrade");
+  upgradeArea.append(upgradeDiv);
+
+  upgradeDiv.onclick = function buyUpgrade() {
+    if (game.quark >= upgrade.upgradeCost) {
+      game.quark -= upgrade.upgradeCost;
+      game.quarkUpgrade[i]++;
+      upgrade.lvl++;
+    }
+  }
+
+  const upgradeNameDiv = document.createElement("div");
+  upgradeNameDiv.textContent = upgrade.name;
+  upgradeNameDiv.classList.add("upgradeName");
+  upgradeDiv.append(upgradeNameDiv);
+
+  const upgradeEffectDiv = document.createElement("div");
+  upgradeEffectDiv.classList.add("upgradeEffect");
+  const upgradeEffectNowSpan = document.createElement("span");
+  upgradeEffectNowSpan.classList.add("upgradeEffectNow")
+  upgradeEffectNowSpan.textContent = upgrade.effectDisplayString;
+  upgradeEffectDiv.append(upgradeEffectNowSpan);
+  const upgradeEffectNextSpan = document.createElement("span");
+  upgradeEffectNextSpan.classList.add("upgradeEffectNext")
+  // nasty hack
+  upgrade.lvl += 1;
+  upgradeEffectNextSpan.textContent = upgrade.effectDisplayString;
+  upgrade.lvl -= 1;
+  upgradeEffectDiv.append(upgradeEffectNextSpan);
+  upgradeDiv.append(upgradeEffectDiv);
+
+  const upgradeDescDiv = document.createElement("div");
+  upgradeDescDiv.textContent = upgrade.description;
+  upgradeDescDiv.classList.add("upgradeDesc");
+  upgradeDiv.append(upgradeDescDiv);
+
+  const upgradeCostDiv = document.createElement("div");
+  upgradeCostDiv.textContent = upgrade.upgradeCost;
+  upgradeCostDiv.classList.add("upgradeCost");
+  upgradeDiv.append(upgradeCostDiv);
+
+  upgradeDiv.style.display = "none";
+});
+
+const upgradeDivs = upgradeArea.children;
+function updateUpgradeMenu() {
+  upgrades.forEach((upgrade, i) => {
+    const upgradeDiv = upgradeDivs[i];
+    if (game.totalQuark >= upgrade.baseCost) {
+      upgradeDiv.style.display = "";
+    }
+
+    
+    upgradeDiv.style.filter =
+      game.quark > upgrade.upgradeCost
+        ? "brightness(1.7)"
+        : "brightness(1)"
+
+    const effectNowNode = upgradeDiv.children[1].children[0];
+    effectNowNode.textContent = upgrade.effectDisplayString;
+
+    const effectNextNode = upgradeDiv.children[1].children[1];
+    // nasty hack
+    upgrade.lvl += 1;
+    effectNextNode.textContent = upgrade.effectDisplayString;
+    upgrade.lvl -= 1;
+
+    const costDiv = upgradeDiv.children[3];
+    costDiv.textContent = upgrade.upgradeCost;
+  })  
+}
+
+
+const fasterQuarks = upgrades.find(u => u.name === "Faster Quarks");
+class Quark {
+  constructor(attrs={}) {
+    this.mass = attrs.mass || 1;
+    this.speed = attrs.speed || 0;
+    this.dist = attrs.dist || game.blackholeRadius;
+    this.angle = attrs.angle || 0;
+    this.color = attrs.color || '#fff';
+  }
+
+  update() {
+    // gravitational acceleration is not affected 
+    // by the mass of the object experiencing it...
+    // but I only made it more realistic this way
+    // to allow for the quark array to be ordered
+    // by time to reach the center, without expensive sorting.
+    this.speed += (0.000003)*(1.5)/Math.log(/* this.mass + 1 */ 2, 3)**2*fasterQuarks.effect;
+    this.dist -= this.speed * speedMult;
+    if (this.dist < 0) {
+      blackholeBump(this.mass);
+      quarkBump(this.mass);
+    }
+    // I think it looks cool if stuff spirals a little
+    // but that's just my suggestion
+    this.angle += 0.001 / this.dist**2;
+  }
+}
+class Antiquark extends Quark {
+  update() {
+    this.speed += (0.000003)*(1.5)/Math.log(/* this.mass + 1 */ 2, 3)**2*fasterQuarks.effect;
+    this.dist += this.speed * speedMult;
+    this.angle += 0.001 / this.dist**2;
+  }
+}
+
+// by splitting quarks and antiquarks into two separate arrays,
+// it becomes very easy to delete complementary pairs.
+let quarks = [];
+let antiquarks = [];
+
+function updateAndFilterParticles () {
+  for (const quark of quarks) {
+    quark.update();
+  }
+  for (const antiquark of antiquarks) {
+    antiquark.update();
+  }
+
+  // Array splicing is expensive--it creates a new array.
+  // So if you do that for every single quark, you're burning much CPU.
+  // By slicing multiple off at once like this,
+  // You only rebuild once per tick, no matter how many quarks.
+
+  const idxNextReachingSingularity =
+    Math.max(0, quarks.findIndex(q => q.dist > 0));
+    
+  if (idxNextReachingSingularity > 0) {
+    quarks = quarks.slice(idxNextReachingSingularity);
+    antiquarks = antiquarks.slice(idxNextReachingSingularity);
+  }
+}
+
+const compressQuarks = upgrades.find(u => u.name === "Compress Quarks");
+const critChance = upgrades.find(u => u.name === "Critical Chance");
+function spawnQuark(count=1) {
+  let crit;
+  if (Math.random() < critChance.effect) {
+    crit = 1;
+    speedMult = Math.min(1e3, speedMult*100);
+  } else {
+    crit = 0;
+  }
+  const countC = Math.max(1, Math.ceil(count/compressQuarks.effect[0]));
+  let mult = compressQuarks.effect[1]*((count/compressQuarks.effect[0])/countC);
+  const mass = getQuarkMass();
+  const dist = Math.sqrt(game.mass/1e15);
+  for (var i = 0; i < countC; i++) {
+    const angle = Math.PI*2*Math.random();
+    if (!crit) {
+      quarks.push(new Quark({dist, angle, mass: mass*mult, color: '#e1f0d8'}));
+      antiquarks.push(new Antiquark({dist, angle, mass: mass*mult, color: '#e6aae5'}));
+    } else {
+      mult *= 2;
+      quarks.push(new Quark({dist, angle, mass: mass*mult, color: '#77ed2f'}));
+      antiquarks.push(new Antiquark({dist, angle, mass: mass*mult, color: '#e827e5'}));
+    }
+  }
+}
+
+const onscreenCanvas = document.querySelector("canvas");
+const onscreenCtx = onscreenCanvas.getContext("2d", {alpha: false});
+
+const offscreenCanvas = document.createElement("canvas");
+const offscreenCtx = offscreenCanvas.getContext("2d", {alpha: false});
+
+const blackholeCanvas = document.createElement("canvas");
+const blackholeCtx = blackholeCanvas.getContext("2d", {alpha: false});
+
+let canvasWidth = Math.floor( (innerWidth-innerHeight*0.005)*0.8 );
+let canvasHeight = Math.floor( innerHeight*0.935 );
+
+function resizeCanvases() {
+  canvasWidth = Math.floor( (innerWidth-innerHeight*0.005)*0.8 );
+  canvasHeight = Math.floor( innerHeight*0.935 );
+
+  onscreenCanvas.width = canvasWidth;
+  onscreenCanvas.height = canvasHeight;
+
+  offscreenCanvas.width = canvasWidth;
+  offscreenCanvas.height = canvasHeight;
+
+  blackholeCanvas.width = canvasWidth;
+  blackholeCanvas.height = canvasHeight;
+}
+resizeCanvases();
+window.onresize = resizeCanvases;
+
+
+// frame counter gets updated in another function
+// (sorry for the spaghetti code)
+let framesElapsed = 0;
+function updateCanvas() {
+  // clear offscreenCanvas
+  offscreenCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+  offscreenCtx.beginPath();
+  offscreenCtx.fillStyle = "#222";
+  offscreenCtx.rect(0, 0, canvasWidth, canvasHeight);
+  offscreenCtx.fill();
+
+  // drawing the blackhole is expensive
+  // and it doesn't change size very fast
+  // so why redraw it every frame?
+  if (framesElapsed % 6 === 0) {
+    // clear blackholeCanvas
+    blackholeCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+    blackholeCtx.beginPath();
+    blackholeCtx.fillStyle = "#222";
+    blackholeCtx.rect(0, 0, canvasWidth, canvasHeight);
+    blackholeCtx.fill();
+  
+    // draw blackhole
+    const blackholeRadius = Math.sqrt(game.mass/1e15)/2;
+    // flooring these floats to ints 
+    // to prevent expensive anti-aliasing calculations
+    // when using subpixel coordinates
+    // (probably not a big deal for only one object, but it's good practice)
+    const floor = Math.floor
+    var grd = blackholeCtx.createRadialGradient(
+      floor( canvasWidth/2 ), 
+      floor( canvasHeight/2 ), 
+      floor( canvasHeight*blackholeRadius ), 
+      floor( canvasWidth/2 ), 
+      floor( canvasHeight/2 ), 
+      floor( canvasHeight*blackholeRadius*1.1 )
+    );
+    grd.addColorStop(0, "#000");
+    grd.addColorStop(0.5, "#000");
+    grd.addColorStop(0.5, "#fff");
+    grd.addColorStop(1, "rgba(255, 255, 255, 0)");
+    blackholeCtx.fillStyle = grd;
+    blackholeCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+  }
+  // render blackhole to offscreenCanvas
+  offscreenCtx.drawImage(blackholeCanvas, 0, 0);
+
+  if (game.toggleQuark) {
+    for (const particleList of [quarks, antiquarks]) {
+      for (const particle of particleList) {
+        const x = Math.cos(particle.angle) * particle.dist;
+        const canvasX = Math.floor( offscreenCanvas.height*(0.5+x/2)+Math.max(0, (canvasWidth-offscreenCanvas.height)/2) );
+        const y = Math.sin(particle.angle) * particle.dist;
+        const canvasY = Math.floor( offscreenCanvas.height*(0.5+y/2)+Math.max(0, (canvasHeight-offscreenCanvas.height)/2) );
+        offscreenCtx.beginPath();
+        offscreenCtx.fillStyle = particle.color;
+        offscreenCtx.strokeStyle = particle.color;
+        offscreenCtx.arc(
+          canvasX,
+          canvasY,
+          ((Math.log(particle.mass, 10)+1)**2)*offscreenCanvas.height/2000,
+          0, 
+          Math.PI*2
+        );
+        offscreenCtx.fill();
+        offscreenCtx.stroke();
+      }
+    }
+  }
+
+  // text
+  if (game.totalQuark < 10) {
+    offscreenCtx.beginPath();
+    offscreenCtx.font = `bold ${0.5*Math.sin(sessionTickSpent/100)+5}vh Space Mono`;
+    offscreenCtx.textBaseline = 'middle';
+    offscreenCtx.fillStyle = '#fff';
+    var txtToWrite = `Click here to Make Quarks`;
+    offscreenCtx.fillText(txtToWrite, canvasWidth/2-offscreenCtx.measureText((txtToWrite).toString()).width/2, canvasHeight/2);
+  }
+  if (game.mass <= 1) {
+    offscreenCtx.beginPath();
+    offscreenCtx.font = `bold ${0.5*Math.sin(sessionTickSpent/100)+5}vh Space Mono`;
+    offscreenCtx.textBaseline = 'middle';
+    offscreenCtx.fillStyle = '#cfc811';
+    const txtToWrite = `You beat the game! Thanks for playing!`;
+    offscreenCtx.fillText(txtToWrite, canvasWidth/2-offscreenCtx.measureText((txtToWrite).toString()).width/2, canvasHeight/2);
+  }
+
+  // finally draw to the onscreen onscreenCanvas
+  onscreenCtx.drawImage(offscreenCanvas, 0, 0);
+}
+
+// equestAnimationFrame gives 
+// more consistent frame rate than setInterval, 
+// and allows for more separation of game logic and graphics
+requestAnimationFrame( function animateFrame() {
+  framesElapsed += 1;
+  updateCanvas();
+  updateUIexceptUpgradeMenu();
+  updateUpgradeMenu();
+  requestAnimationFrame(animateFrame);
+})
 
 // etc
 function signRand() {
@@ -150,288 +496,80 @@ function notation(num) {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-// quark
-var speedMult = 1;
-class Quark {
-  constructor(attrs={}) {
-    this.position = attrs.position || [0, 0];
-    this.mass = attrs.mass || 0;
-    this.speed = attrs.speed || 0;
-    this.driction = attrs.driction || 0;
-    this.color = attrs.color || '#fff';
-  }
+// save these references to avoid re-querying the DOM for them
+const quarkCounter = document.getElementById("quarkCount");
+const quarkToggler = document.getElementById("toggleQuark");
+const blackHoleMassCounter = document.getElementById("blackholeMass");
 
-  update() {
-    this.speed += (0.000003)*(1.5)/Math.log(this.mass+1, 3)**2*getUpgradeEffect(4);
-    var deg = (Math.atan2(this.position[1]-0, this.position[0]-0)+Math.PI*(3/2+this.driction))%(Math.PI*2);
-    this.position[0] += Math.sin(deg)*this.speed*speedMult;
-    this.position[1] -= Math.cos(deg)*this.speed*speedMult;
-  }
+function updateUIexceptUpgradeMenu () {
+  quarkCounter.textContent = notation(Math.floor(game.quark));
+  const transform = quarkCounter.style.transform;
+  // the regex was cool, but I think this way is easier to read?
+  const scaleFactorIdx = transform.search(/scale\(1,/);
+  const offset = "scale(1,".length;
+  const scaleFactor = parseFloat(transform.slice(scaleFactorIdx + offset+1)) || 1;
+  quarkCounter.style.transform = `scale(1, ${Math.max(1, scaleFactor * .99)}`;
+  
+  blackHoleMassCounter.textContent = 'Mass: ' + notation(Math.floor(game.mass));
+  
+  quarkToggler.style.color =
+    game.toggleQuark
+      ? '#b31d92'
+      : '#2eb31d'
 }
 
-// game
-var upgradeCut = [10, 100, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9];
-var upgradeName = [
-  "More Quarks", "Heavier Quarks", "Fast Clicker", "More Heavier Quarks", "Faster Quarks",
-  "Critical Chance", "Compress Quarks", "Speed Mass"
-];
-var upgradeDesc = [
-  "Spawn more Quarks per click", "Spawn heavier Quarks", "Autoclick Faster", "Spawn more heavier Quarks", "Faster move speed of Quarks",
-  "Increase mass! Increase speed!", "Compress some Quarks, but gain mass", "Speed multiply affect mass"
-];
-function mainDomUpdate() {
-  document.getElementById("quarkCount").innerHTML = notation(Math.floor(game.quark));
-  document.getElementById("quarkCount").style.transform = `scale(1, ${Math.max(1, Number(document.getElementById("quarkCount").style.transform.replace(/[scale\(\)]|(1, )/g, ''))*0.99)})`;
-  document.getElementById("blackholeMass").innerHTML = 'Mass: ' + notation(Math.floor(game.mass));
-  if (game.toggleQuark) {
-    document.getElementById("toggleQuark").style.color = '#b31d92';
-  } else {
-    document.getElementById("toggleQuark").style.color = '#2eb31d';
-  }
-}
-function upgradeSpawn() {
-  var unlocked = upgradeCut.length;
-  for (var i = 0, l = upgradeCut.length; i < l; i++) {
-    if (upgradeCut[i] > game.totalQuark) {
-      unlocked = i;
-      break;
-    }
-  }
-  while (document.querySelectorAll("#upgradeArea > .upgrade").length < unlocked) {
-    var parentNode = document.getElementById("upgradeArea");
-    var childNode = document.createElement("div");
-    childNode.classList.add("upgrade");
-    parentNode.append(childNode);
-
-    var upgIdx = document.querySelectorAll("#upgradeArea > .upgrade").length-1;
-
-    childNode.onclick = new Function(`buyUpgrade(${upgIdx})`);
-
-    var parentNode = document.querySelector(`#upgradeArea > .upgrade:nth-child(${upgIdx+1})`);
-    var childNode = document.createElement("div");
-    childNode.innerHTML = upgradeName[upgIdx];
-    childNode.classList.add("upgradeName");
-    parentNode.append(childNode);
-
-    var parentNode = document.querySelector(`#upgradeArea > .upgrade:nth-child(${upgIdx+1})`);
-    var childNode = document.createElement("div");
-    childNode.classList.add("upgradeEffect");
-    parentNode.append(childNode);
-
-    var parentNode = document.querySelector(`#upgradeArea > .upgrade:nth-child(${upgIdx+1}) > .upgradeEffect`);
-    var childNode = document.createElement("span");
-    childNode.classList.add("upgradeEffectNow");
-    parentNode.append(childNode);
-
-    var parentNode = document.querySelector(`#upgradeArea > .upgrade:nth-child(${upgIdx+1}) > .upgradeEffect`);
-    var childNode = document.createElement("span");
-    childNode.classList.add("upgradeEffectNext");
-    parentNode.append(childNode);
-
-    var parentNode = document.querySelector(`#upgradeArea > .upgrade:nth-child(${upgIdx+1})`);
-    var childNode = document.createElement("div");
-    childNode.innerHTML = upgradeDesc[upgIdx];
-    childNode.classList.add("upgradeDesc");
-    parentNode.append(childNode);
-
-    var parentNode = document.querySelector(`#upgradeArea > .upgrade:nth-child(${upgIdx+1})`);
-    var childNode = document.createElement("div");
-    childNode.classList.add("upgradeCost");
-    parentNode.append(childNode);
-  }
-}
-function displayUpgrade() {
-  upgradeSpawn();
-  for (var i = 0, l = document.querySelectorAll("#upgradeArea > .upgrade").length; i < l; i++) {
-    document.querySelector(`#upgradeArea > .upgrade:nth-child(${i+1}) > .upgradeCost`).innerHTML = `${notation(getUpgradeCost(i))} Quarks`;
-    if (game.quark >= getUpgradeCost(i)) {
-      document.querySelector(`#upgradeArea > .upgrade:nth-child(${i+1}) > .upgradeCost`).style.filter = `brightness(1.7)`;
-    } else {
-      document.querySelector(`#upgradeArea > .upgrade:nth-child(${i+1}) > .upgradeCost`).style.filter = `brightness(1)`;
-    }
-    document.querySelector(`#upgradeArea > .upgrade:nth-child(${i+1}) > .upgradeEffect > .upgradeEffectNow`).innerHTML = getUpgradeEffectString(i);
-    document.querySelector(`#upgradeArea > .upgrade:nth-child(${i+1}) > .upgradeEffect > .upgradeEffectNext`).innerHTML = getUpgradeEffectString(i, game.quarkUpgrade[i]+1);
-  }
-}
-function quarkBump(count) {
-  game.quark += count*getUpgradeEffect(7);
-  game.totalQuark += count*getUpgradeEffect(7);
-  document.getElementById("quarkCount").style.transform = `scale(1, 1.5)`;
+const speedMass = upgrades.find(u => u.name === "Speed Mass");
+function quarkBump(n) {
+  game.quark += n * speedMass.effect;
+  game.totalQuark += n * speedMass.effect;
+  quarkCounter.style.transform = "scale(1, 1.5)";
   if (game.quark > 1e15) {
     game.quark = 1e15;
   }
 }
 function blackholeBump(count) {
-  game.mass -= count*getUpgradeEffect(7);
-  game.totalMass += count*getUpgradeEffect(7);
+  game.mass -= count * speedMass.effect;
+  game.totalMass += count * speedMass.effect;
   if (game.mass < 1) {
     game.mass = 1;
-    document.getElementById("quarkCount").style.color = '#cfc811';
-  }
-}
-function spawnQuark(count=1) {
-  if (Math.random() < getUpgradeEffect(5)) {
-    var crit = 1;
-    speedMult = Math.min(1e3, speedMult*100);
-  } else {
-    var crit = 0;
-  }
-  var mult = 1;
-  var countC = Math.max(1, Math.ceil(count/getUpgradeEffect(6)[0]));
-  mult *= getUpgradeEffect(6)[1]*((count/getUpgradeEffect(6)[0])/countC);
-  for (var i = 0; i < countC; i++) {
-    var mass = getQuarkMass();
-    var dist = Math.sqrt(game.mass/1e15);
-    var deg = Math.PI*2*Math.random();
-    var p = [
-      Math.sin(deg)*dist,
-      -Math.cos(deg)*dist
-    ];
-    if (!crit) {
-      quarks.push(new Quark({position: [p[0], p[1]], mass: mass*mult, color: '#e1f0d8'}));
-      quarks.push(new Quark({position: [p[0], p[1]], mass: mass*mult, driction: 1, color: '#e6aae5'}));
-    } else {
-      mult *= 2;
-      quarks.push(new Quark({position: [p[0], p[1]], mass: mass*mult, color: '#77ed2f'}));
-      quarks.push(new Quark({position: [p[0], p[1]], mass: mass*mult, driction: 1, color: '#e827e5'}));
-    }
-  }
-}
-function buyUpgrade(idx) {
-  if (game.quark >= getUpgradeCost(idx)) {
-    game.quark -= getUpgradeCost(idx);
-    game.quarkUpgrade[idx]++;
-    displayUpgrade();
+    quarkCounter.style.color = '#cfc811';
   }
 }
 
-// get
+const heavierQuarks = upgrades.find(u => u.name === "Heavier Quarks");
+const moreHeavierQuarks = upgrades.find(u => u.name === "More Heavier Quarks");
 function getQuarkMassRange() {
-  var range = [1, (1+getUpgradeEffect(1))*getUpgradeEffect(3)];
-  return range;
+  return [1, 1 + heavierQuarks.effect * moreHeavierQuarks.effect];
 }
 function getQuarkMass() {
   return Math.floor(Math.random()*(getQuarkMassRange()[1]-getQuarkMassRange()[0]+1))+getQuarkMassRange()[0];
 }
+
+const moreQuarks = upgrades.find(u => u.name === "More Quarks")
 function getClickMult() {
-  return 1+getUpgradeEffect(0);
-}
-function getUpgradeCost(idx, lv=game.quarkUpgrade[idx]) {
-  var lvp = lv+1;
-  switch (idx) {
-    case 0:
-    return Math.floor(10*(lvp**lvp)*lvp);
-      break;
-    case 1:
-    return Math.floor(100*(2+lv/11)**(lv/1.6));
-      break;
-    case 2:
-    return Math.floor(1e4*(2+lv/8)**(lv*0.9));
-      break;
-    case 3:
-    return Math.floor(1e5*(1.7+lv/10)**(lv/1.2));
-      break;
-    case 4:
-    return Math.floor(4e5*(1+lv/13)**(lv/1.6));
-      break;
-    case 5:
-    return Math.floor(3e6*(3-lv/50)**lv);
-      break;
-    case 6:
-    return Math.floor(50e6*(3+lv/4)**lv);
-      break;
-    case 7:
-    return Math.floor(3e8*lvp**(4+lv));
-      break;
-    default:
-      return 9.99e99;
-  }
-}
-function getUpgradeEffect(idx, lv=game.quarkUpgrade[idx]) {
-  switch (idx) {
-    case 0:
-    return lv;
-      break;
-    case 1:
-    return lv**2+Math.max(0, lv-10)**3;
-      break;
-    case 2:
-    return 1+lv**1.5/10+lv/2;
-      break;
-    case 3:
-    return 1+lv*(1+lv/(10*0.93**lv));
-      break;
-    case 4:
-    return 1+lv/(10*0.9**lv);
-      break;
-    case 5:
-    return 0.02*lv;
-      break;
-    case 6:
-    return [1+lv, 1+lv*3];
-      break;
-    case 7:
-    return Math.pow(getUpgradeEffect(4)*speedMult, lv*1/4);
-      break;
-    default:
-      return 0;
-  }
-}
-function getUpgradeEffectString(idx, lv=game.quarkUpgrade[idx]) {
-  var s = getUpgradeEffect(idx, lv).toString();
-  switch (idx) {
-    case 0: case 1:
-    return `+${notation(s)}`;
-      break;
-    case 2:
-    return `${Number(s).toFixed(2)} / sec`;
-      break;
-    case 3: case 4: case 7:
-    return `x${notation(Number(s).toFixed(2))}`;
-      break;
-    case 5:
-    return `${(Number(s)*100).toFixed(0)}%`;
-      break;
-    case 6:
-    return `/${getUpgradeEffect(idx, lv)[0].toString()}, x${getUpgradeEffect(idx, lv)[1].toString()}`;
-      break;
-    default:
-    return 'Error!';
-  }
+  return 1 + moreQuarks.effect;
 }
 
-// event
-var mousePos = [-1, -1];
-var canvasPos = [0, 0];
-document.onmousemove = getMousePos;
-function getMousePos(event) {
-  mousePos = [event.clientX, event.clientY];
-  canvasPos = [
-    ((mousePos[0]-Math.max(0, (canvas.width-canvasSize)/2))/canvasSize)*2-1,
-    (((mousePos[1]-innerHeight*0.065)-Math.max(0, (canvas.height-canvasSize)/2))/canvasSize)*2-1
-  ];
-}
-canvas.onclick = new Function("spawnQuark(getClickMult())");
+onscreenCanvas.onclick = () => spawnQuark(getClickMult());
 
 // loop
-var tickSpeed = 20;
-var autoClickCharge = 0;
+const targetTicksPerSecond = 50;
+const tickSpeed = 1000 / targetTicksPerSecond;
+const fastClicker = upgrades.find(u => u.name === "Fast Clicker");
+let autoClickCharge = 0;
 setInterval( function () {
-  screenUpdate();
-  if (sessionTickSpent % 5 === 0) {
-    displayUpgrade();
-  }
+  updateAndFilterParticles();
+
   sessionTickSpent++;
   game.tickSpent++;
   if (sessionTickSpent%100 === 0) {
     save();
   }
-  autoClickCharge += getUpgradeEffect(2)*tickSpeed/1000;
+  autoClickCharge += fastClicker.effect * tickSpeed/1000;
   if (autoClickCharge > 1) {
     spawnQuark(getClickMult()*Math.floor(autoClickCharge));
     autoClickCharge -= Math.floor(autoClickCharge);
   }
-  mainDomUpdate();
   speedMult = Math.max(1, speedMult/1.5)
 }, tickSpeed);
 
