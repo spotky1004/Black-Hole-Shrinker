@@ -384,7 +384,9 @@ function getUpgradeEffect(idx, lv=game.quarkUpgrade[idx]) {
   }
 }
 function getUpgradeEffectString(idx, lv=game.quarkUpgrade[idx]) {
-  var s = getUpgradeEffect(idx, lv).toString();
+  if (idx != 6) {
+    var s = getUpgradeEffect(idx, lv).toString();
+  }
   switch (idx) {
     case 0: case 1:
     return `+${notation(s)}`;
