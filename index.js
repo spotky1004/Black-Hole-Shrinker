@@ -103,7 +103,7 @@ function screenUpdate() {
     var txtToWrite = `You beat the game! Thanks for playing!`;
     c.fillText(txtToWrite, canvas.width/2-c.measureText((txtToWrite).toString()).width/2, canvas.height/2);
   }
-  
+
   // finally draw to the onscreen canvas
   onscreenC.drawImage(offscreenCanvas, 0, 0);
 }
@@ -148,7 +148,11 @@ function signRand() {
   return Math.sign(Math.random()*2-1);
 }
 function notation(num) {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  if (num > 1e20) {
+    return num.toExponential(2);
+  } else {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
 }
 
 // quark
