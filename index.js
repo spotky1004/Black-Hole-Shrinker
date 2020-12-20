@@ -378,7 +378,7 @@ function getUpgradeEffect(idx, lv=game.quarkUpgrade[idx]) {
     return [1+lv, 1+lv*3];
       break;
     case 7:
-    return Math.pow(getUpgradeEffect(4)*speedMult, lv*1/4);
+    return Math.pow(getUpgradeEffect(4)*speedMult, Math.min(10, lv)*1/4+Math.max(0, lv-10)*1/10);
       break;
     default:
       return 0;
