@@ -148,6 +148,7 @@ function signRand() {
   return Math.sign(Math.random()*2-1);
 }
 function notation(num) {
+  num = Number(num);
   if (num > 1e20) {
     return num.toExponential(2);
   } else {
