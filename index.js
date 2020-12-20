@@ -202,7 +202,7 @@ function mainDomUpdate() {
   }
   if (game.mass == 1 || game.blackHoleDone >= 1) {
     document.getElementById("freePlay").style.display = "block";
-    document.getElementById("freePlay").innerHTML = (game.freePlay ? `Quark bonus: x${notation(Number(Math.floor(1.1**game.blackHoleDone)))}` : "Turn On Free Play");
+    document.getElementById("freePlay").innerHTML = (game.freePlay ? `Quark bonus: x${(1.1**game.blackHoleDone).toFixed(2)}` : "Turn On Free Play");
   }
 }
 function upgradeSpawn() {
