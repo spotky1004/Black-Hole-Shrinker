@@ -45,7 +45,7 @@ function screenUpdate() {
   c.rect(0, 0, canvas.width, canvas.height);
   c.fill();
 
-  var blackholeSize = Math.sqrt(game.mass/1e15)/2;
+  var blackholeSize = Math.sqrt(game.mass/(1e15*1e5**game.blackHoleDone))/2*(1.05**game.blackHoleDone);
   // draw blackhole
   var grd = c.createRadialGradient(canvas.width/2, canvas.height/2, canvasSize*blackholeSize, canvas.width/2, canvas.height/2, canvasSize*blackholeSize*1.1);
   grd.addColorStop(0, "#000");
@@ -59,7 +59,7 @@ function screenUpdate() {
   for (var i = 0; i < quarks.length; i++) {
     if (
       (quarks[i].driction && (Math.abs(quarks[i].position[0]) > maxCanvasPos[0] || Math.abs(quarks[i].position[1]) > maxCanvasPos[1])) ||
-      (!quarks[i].driction && Math.abs(quarks[i].position[0]) < 0.02 && Math.abs(quarks[i].position[1]) < 0.02)
+      (!quarks[i].driction && Math.abs(quarks[i].position[0]) < 0.02+((Math.log(quarks[i].mass, 10)+1)**2)/2000 && Math.abs(quarks[i].position[1]) < 0.02+((Math.log(quarks[i].mass, 10)+1)**2)/2000)
     ) {
       if (quarks[i].driction) {
         quarkBump(quarks[i].mass);
@@ -119,7 +119,8 @@ var tempSaveData = {
   "energy": 0,
   "quarkUpgrade" : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   "toggleQuark": 0,
-  "freePlay": 0
+  "freePlay": 0,
+  "blackHoleDone": 0
 };
 var game = {};
 var savePoint = "blockHoleShrinker";
@@ -170,8 +171,13 @@ class Quark {
   update() {
     this.speed += (0.000003)*(1.5)/Math.log(this.mass+1, 3)**2*getUpgradeEffect(4);
     var deg = (Math.atan2(this.position[1]-0, this.position[0]-0)+Math.PI*(3/2+this.driction))%(Math.PI*2);
-    this.position[0] += Math.sin(deg)*this.speed*speedMult;
-    this.position[1] -= Math.cos(deg)*this.speed*speedMult;
+    if (this.speed*speedMult < 0.4) {
+      this.position[0] += Math.sin(deg)*this.speed*speedMult;
+      this.position[1] -= Math.cos(deg)*this.speed*speedMult;
+    } else {
+      this.position[0] += Math.sin(deg)/20;
+      this.position[1] -= Math.cos(deg)/20;
+    }
   }
 }
 
@@ -194,7 +200,10 @@ function mainDomUpdate() {
   } else {
     document.getElementById("toggleQuark").style.color = '#2eb31d';
   }
-  document.getElementById("freePlay").style.display = (game.freePlay ? 'none' : 'block');
+  if (game.mass == 1 || game.blackHoleDone >= 1) {
+    document.getElementById("freePlay").style.display = "block";
+    document.getElementById("freePlay").innerHTML = (game.freePlay ? `Quark bonus: x${notation(Number(Math.floor(1.5**game.blackHoleDone)))}` : "Turn On Free Play");
+  }
 }
 function upgradeSpawn() {
   var unlocked = upgradeCut.length;
@@ -261,8 +270,8 @@ function displayUpgrade() {
   }
 }
 function quarkBump(count) {
-  game.quark += count*getUpgradeEffect(7);
-  game.totalQuark += count*getUpgradeEffect(7);
+  game.quark += count*getUpgradeEffect(7)*(1.5**game.blackHoleDone);
+  game.totalQuark += count*getUpgradeEffect(7)*(1.5**game.blackHoleDone);
   document.getElementById("quarkCount").style.transform = `scale(1, 1.5)`;
   if (game.quark > 1e15 && !game.freePlay) {
     game.quark = 1e15;
@@ -272,7 +281,12 @@ function blackholeBump(count) {
   game.mass -= count*getUpgradeEffect(7);
   game.totalMass += count*getUpgradeEffect(7);
   if (game.mass < 1) {
-    game.mass = 1;
+    if (game.freePlay) {
+      game.blackHoleDone++;
+      game.mass = 1e15*1e5**game.blackHoleDone;
+    } else {
+      game.mass = 1;
+    }
     document.getElementById("quarkCount").style.color = '#cfc811';
   }
 }
@@ -288,7 +302,7 @@ function spawnQuark(count=1) {
   mult *= getUpgradeEffect(6)[1]*((count/getUpgradeEffect(6)[0])/countC);
   for (var i = 0; i < countC; i++) {
     var mass = getQuarkMass();
-    var dist = Math.sqrt(game.mass/1e15);
+    var dist = Math.sqrt(game.mass/(1e15*1e5**game.blackHoleDone))*(1.05**game.blackHoleDone);
     var deg = Math.PI*2*Math.random();
     var p = [
       Math.sin(deg)*dist,
@@ -378,7 +392,7 @@ function getUpgradeEffect(idx, lv=game.quarkUpgrade[idx]) {
     return [1+lv, 1+lv*3];
       break;
     case 7:
-    return Math.pow(getUpgradeEffect(4)*speedMult, Math.min(10, lv)*1/4+Math.max(0, lv-10)*1/10);
+    return Math.pow(getUpgradeEffect(4)*speedMult, Math.min(10, lv)*1/4+Math.max(0, lv-10)*1/7);
       break;
     default:
       return 0;
