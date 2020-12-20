@@ -202,7 +202,7 @@ function mainDomUpdate() {
   }
   if (game.mass == 1 || game.blackHoleDone >= 1) {
     document.getElementById("freePlay").style.display = "block";
-    document.getElementById("freePlay").innerHTML = (game.freePlay ? `Quark bonus: x${notation(Number(Math.floor(1.5**game.blackHoleDone)))}` : "Turn On Free Play");
+    document.getElementById("freePlay").innerHTML = (game.freePlay ? `Quark bonus: x${notation(Number(Math.floor(1.3**game.blackHoleDone)))}` : "Turn On Free Play");
   }
 }
 function upgradeSpawn() {
@@ -270,8 +270,8 @@ function displayUpgrade() {
   }
 }
 function quarkBump(count) {
-  game.quark += count*getUpgradeEffect(7)*(1.5**game.blackHoleDone);
-  game.totalQuark += count*getUpgradeEffect(7)*(1.5**game.blackHoleDone);
+  game.quark += count*getUpgradeEffect(7)*(1.3**game.blackHoleDone);
+  game.totalQuark += count*getUpgradeEffect(7)*(1.3**game.blackHoleDone);
   document.getElementById("quarkCount").style.transform = `scale(1, 1.5)`;
   if (game.quark > 1e15 && !game.freePlay) {
     game.quark = 1e15;
