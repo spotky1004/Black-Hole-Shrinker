@@ -96,7 +96,8 @@ var tempSaveData = {
   "tickSpent": 0,
   "energy": 0,
   "quarkUpgrade" : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  "toggleQuark": 0
+  "toggleQuark": 0,
+  "freePlay": 0
 };
 var game = {};
 var savePoint = "blockHoleShrinker";
@@ -166,6 +167,7 @@ function mainDomUpdate() {
   } else {
     document.getElementById("toggleQuark").style.color = '#2eb31d';
   }
+  document.getElementById("freePlay").style.display = (game.freePlay ? 'none' : 'block');
 }
 function upgradeSpawn() {
   var unlocked = upgradeCut.length;
@@ -235,7 +237,7 @@ function quarkBump(count) {
   game.quark += count*getUpgradeEffect(7);
   game.totalQuark += count*getUpgradeEffect(7);
   document.getElementById("quarkCount").style.transform = `scale(1, 1.5)`;
-  if (game.quark > 1e15) {
+  if (game.quark > 1e15 && !game.freePlay) {
     game.quark = 1e15;
   }
 }
