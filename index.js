@@ -356,7 +356,7 @@ function getUpgradeCost(idx, lv=game.quarkUpgrade[idx]) {
     return Math.floor(4e5*(1+lv/13)**(lv/1.6));
       break;
     case 5:
-    return Math.floor(3e6*(3-lv/50)**lv);
+    return Math.floor(3e6*Math.max(1, 3-lv/50)**lv);
       break;
     case 6:
     return Math.floor(50e6*(3+lv/4)**lv);
